@@ -1,0 +1,33 @@
+{
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+	"type": "plain_text",
+	"text": "Something happened! ${name} in ${realm} (${env}) :rocket:",
+	"emoji": true
+      }
+    },
+    {
+      "type": "section",
+      "fields": [
+	{
+	  "type": "mrkdwn",
+	  "text": "*User:*\n${username}"
+	},
+	{
+	  "type": "mrkdwn",
+	  "text": "*Client:*\n${clientId}"
+	},
+	{
+	  "type": "mrkdwn",
+	  "text": "*Application:*\n<${clientUrl}|View Client>"
+	},
+	{
+	  "type": "mrkdwn",
+	  "text": "*Created By:*\n<${userUrl}|View User>"
+	}
+      ]
+    }
+  ]
+}
