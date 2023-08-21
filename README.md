@@ -1,4 +1,4 @@
-> :rocket: **Free** [Keycloak as a service](https://phasetwo.io/dashboard/?utm_source=github&utm_medium=readme&utm_campaign=keycloak-extesions).
+> :rocket: **Free** [Keycloak as a service](https://phasetwo.io/?utm_source=github&utm_medium=readme&utm_campaign=keycloak-extesions).
 
 # keycloak-extensions
 
