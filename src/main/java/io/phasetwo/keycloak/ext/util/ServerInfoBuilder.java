@@ -17,7 +17,7 @@ public class ServerInfoBuilder {
   static ServerInfoBuilder builder() {
     return new ServerInfoBuilder();
   }
-  
+
   public ServerInfoBuilder add(String key, Object value) {
     this.map.put(key, value.toString());
     return this;
