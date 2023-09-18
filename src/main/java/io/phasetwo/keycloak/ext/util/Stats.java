@@ -13,7 +13,6 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 public class Stats {
 
   public static final String PHASETWO_ANALYTICS_DISABLED_KEY = "PHASETWO_ANALYTICS_DISABLED";
-  // todo make a redirect
   public static final String PHASETWO_ANALYTICS_URL = "https://eooemvvcxy5k16a.m.pipedream.net";
 
   public static void collect(String name, String version, String commit, Object... args) {
