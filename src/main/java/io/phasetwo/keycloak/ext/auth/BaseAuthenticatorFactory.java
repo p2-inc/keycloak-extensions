@@ -22,11 +22,11 @@ public abstract class BaseAuthenticatorFactory
   private final String providerId;
   private final AuthenticatorConfigProperties propsProvider;
 
-  BaseAuthenticatorFactory(String providerId) {
+  public BaseAuthenticatorFactory(String providerId) {
     this(providerId, new AuthenticatorConfigProperties() {});
   }
 
-  BaseAuthenticatorFactory(String providerId, AuthenticatorConfigProperties propsProvider) {
+  public BaseAuthenticatorFactory(String providerId, AuthenticatorConfigProperties propsProvider) {
     this.providerId = providerId;
     this.propsProvider = propsProvider;
   }
