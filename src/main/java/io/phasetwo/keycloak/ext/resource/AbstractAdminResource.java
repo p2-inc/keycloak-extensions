@@ -4,10 +4,6 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import lombok.extern.jbosslog.JBossLog;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.Config;
@@ -63,6 +59,11 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
     this.adminEvent = parent.adminEvent;
     this.user = parent.user;
     this.adminRealm = parent.adminRealm;
+  }
+
+  public T createAdminAuth(
+      RealmModel realm, AccessToken token, UserModel user, ClientModel client) {
+    return (T) new AdminAuth(realm, token, user, client);
   }
 
   public final void setup() {
@@ -142,33 +143,8 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
       throw new NotFoundException("Could not find client for authorization");
     }
 
-    user = authResult.getUser();
-
-    Type genericSuperClass = getClass().getGenericSuperclass();
-    ParameterizedType parametrizedType = null;
-    while (parametrizedType == null) {
-      if ((genericSuperClass instanceof ParameterizedType)) {
-        parametrizedType = (ParameterizedType) genericSuperClass;
-      } else {
-        genericSuperClass = ((Class<?>) genericSuperClass).getGenericSuperclass();
-      }
-    }
-
-    Class clazz = (Class) parametrizedType.getActualTypeArguments()[0];
-
-    try {
-      Constructor<? extends Type> constructor =
-          clazz.getConstructor(
-              RealmModel.class, AccessToken.class, UserModel.class, ClientModel.class);
-      auth = (T) constructor.newInstance(new Object[] {this.realm, token, user, client});
-    } catch (NoSuchMethodException
-        | SecurityException
-        | InstantiationException
-        | IllegalAccessException
-        | IllegalArgumentException
-        | InvocationTargetException ex) {
-      log.error("Failed to instantiate AdminAuth instance", ex);
-    }
+    this.user = authResult.getUser();
+    auth = createAdminAuth(this.realm, token, this.user, client);
   }
 
   private void setupEvents() {
