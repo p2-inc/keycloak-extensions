@@ -4,14 +4,11 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import lombok.extern.jbosslog.JBossLog;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.jose.jws.JWSInput;
@@ -28,6 +25,7 @@ import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.resources.admin.permissions.ManagementPermissions;
 
 /** */
 @JBossLog
@@ -42,6 +40,7 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
   protected T auth;
   protected AdminPermissionEvaluator permissions;
   protected AdminEventBuilder adminEvent;
+  protected EventBuilder event;
   protected UserModel user;
   protected RealmModel adminRealm;
 
@@ -64,11 +63,25 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
     this.adminRealm = parent.adminRealm;
   }
 
+  public T createAdminAuth(
+      RealmModel realm, AccessToken token, UserModel user, ClientModel client) {
+    return (T) new AdminAuth(realm, token, user, client);
+  }
+
   public final void setup() {
     setupAuth();
     setupEvents();
     setupPermissions();
     setupCors();
+  }
+
+  public void requireAdminRole(String role) {
+    if (!hasAdminRole(role))
+      throw new NotAuthorizedException(String.format("%s role is required", role));
+  }
+
+  public boolean hasAdminRole(String role) {
+    return ManagementPermissions.hasOneAdminRole(session, realm, auth, role);
   }
 
   private void setupCors() {
@@ -132,39 +145,15 @@ public abstract class AbstractAdminResource<T extends AdminAuth> {
       throw new NotFoundException("Could not find client for authorization");
     }
 
-    user = authResult.getUser();
-
-    Type genericSuperClass = getClass().getGenericSuperclass();
-    ParameterizedType parametrizedType = null;
-    while (parametrizedType == null) {
-      if ((genericSuperClass instanceof ParameterizedType)) {
-        parametrizedType = (ParameterizedType) genericSuperClass;
-      } else {
-        genericSuperClass = ((Class<?>) genericSuperClass).getGenericSuperclass();
-      }
-    }
-
-    Class clazz = (Class) parametrizedType.getActualTypeArguments()[0];
-
-    try {
-      Constructor<? extends Type> constructor =
-          clazz.getConstructor(
-              RealmModel.class, AccessToken.class, UserModel.class, ClientModel.class);
-      auth = (T) constructor.newInstance(new Object[] {this.realm, token, user, client});
-    } catch (NoSuchMethodException
-        | SecurityException
-        | InstantiationException
-        | IllegalAccessException
-        | IllegalArgumentException
-        | InvocationTargetException ex) {
-      log.error("Failed to instantiate AdminAuth instance", ex);
-    }
+    this.user = authResult.getUser();
+    auth = createAdminAuth(this.realm, token, this.user, client);
   }
 
   private void setupEvents() {
     adminEvent =
         new AdminEventBuilder(this.realm, auth, session, session.getContext().getConnection())
             .realm(realm);
+    event = new EventBuilder(this.realm, session, connection).realm(realm);
   }
 
   private void setupPermissions() {
